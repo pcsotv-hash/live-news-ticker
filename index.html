@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARY Style News Ticker</title>
+    <!-- Naya Urdu Font (Gulzar) add kiya gaya hai -->
+    <link href="https://fonts.googleapis.com/css2?family=Gulzar&display=swap" rel="stylesheet">
+    <style>
+        /* Basic page setup / Page ka bunyadi design */
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #1a1a1a; /* TV screen background */
+            overflow: hidden;
+            height: 100vh;
+            color: white;
+        }
+
+        /* TV screen dummy content / TV ka pichla hissa */
+        .tv-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: radial-gradient(circle, #333 0%, #000 100%);
+            font-size: 2rem;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+        }
+
+        /* Main Ticker Container / Ticker ka sabse bada dabba */
+        .ticker-container {
+            position: fixed;
+            bottom: 5%; /* Thora sa oopar taake TV jaisa lage */
+            left: 5%;
+            width: 90%;
+            z-index: 1000;
+            box-shadow: 0 12px 25px rgba(0,0,0,0.9); /* Enhanced shadow */
+            border-radius: 5px;
+            overflow: hidden;
+            display: flex; 
+            flex-direction: column; /* Vertical alignment */
+        }
+
+        /* Bottom Row for White Ticker and Clock */
+        .ticker-bottom-row {
+            display: flex;
+            height: 25px; /* Height 25px kar di hai */
+            border-bottom: 5px solid #d30000; /* Red border at bottom */
+            align-items: stretch; /* Dono (patti aur clock) ko barabar height dene ke liye */
+        }
+
+        /* --- RED TICKER (Top) / Luxury Laal Patti --- */
+        .ticker-red {
+            background: linear-gradient(to bottom, #ff1a1a 0%, #cc0000 40%, #800000 100%);
+            height: 70px; /* Patti ki height 60px se 70px kar di hai */
+            display: flex;
+            align-items: center;
+            position: relative;
+            border-top: 1px solid #ff9999; /* Light reflection */
+            /* Yellow border line hata di gayi hai */
+            box-shadow: inset 0px 5px 15px rgba(255, 255, 255, 0.2);
+            overflow: hidden; /* Flare ko bahar nikalne se rokne ke liye */
+        }
+
+        /* Luxury Glass/Shine effect */
+        .luxury-shine {
+            position: absolute;
+            top: 0;
+            left: -150%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);
+            transform: skewX(-30deg);
+            animation: glint 5s infinite;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        @keyframes glint {
+            0% { left: -150%; }
+            20%, 100% { left: 250%; }
+        }
+
+        /* --- DARK TICKER (Bottom) / Niche wali patti --- */
+        .ticker-white {
+            background-color: #ffffff; /* White color kar diya gaya hai */
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0px 0px 10px rgba(255, 255, 255, 0.8); /* Light white shadow */
+        }
+
+        /* Scrolling Area / Chalne wali text ka dabba */
+        .ticker-scroll-wrapper {
+            flex-grow: 1;
+            overflow: hidden;
+            position: relative;
+            height: 100%;
+        }
+
+        /* Base Animated Headline Style */
+        .ticker-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 95%;
+            color: white;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.8);
+            text-align: center;
+            opacity: 0;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        /* Dynamic Font Styles for Urdu vs English */
+        .text-urdu {
+            font-family: 'Gulzar', 'Jameel Noori Nastaleeq', 'Noto Nastaliq Urdu', serif; /* Notun font apply kora holo */
+            font-size: 32px; /* Font size thora bara kar diya */
+            padding-top: 8px; /* Text ko center mein rakhne ke liye padding thori adjust ki */
+            font-weight: 400;
+            direction: rtl;
+        }
+
+        .text-english {
+            font-family: 'Arial', sans-serif;
+            font-size: 22px; /* English font bhi thora bara kar diya */
+            font-weight: 900;
+            direction: ltr;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* FAST ZOOM ANIMATION CLASSES (Entry from Bottom, Exit to Top) */
+        .zoomFast {
+            animation: zoomAnim 5s ease-in-out forwards; /* Slightly faster duration */
+        }
+
+        @keyframes zoomAnim {
+            0% {
+                transform: translate(-50%, 150%) scale(1.5); /* Enter from bottom with strong zoom */
+                opacity: 0;
+            }
+            15% {
+                transform: translate(-50%, -50%) scale(1); /* Settle at center */
+                opacity: 1;
+            }
+            85% {
+                transform: translate(-50%, -50%) scale(1); /* Stay visible */
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -200%) scale(0.9); /* Slight zoom out and exit top */
+                opacity: 0;
+            }
+        }
+
+        /* Seamless Continuous Ticker Track (Naya Gapless Scroll) */
+        .ticker-continuous-track {
+            display: flex;
+            width: max-content;
+            height: 100%;
+            align-items: center;
+            animation: scroll-continuous 80s linear infinite; /* Speed aur bhi kam (slow) kar di gayi hai */
+        }
+
+        /* White ticker text style (ENGLISH) */
+        .ticker-text-span {
+            white-space: nowrap;
+            font-weight: bold;
+            color: #000000; /* White patti par black text */
+            font-size: 14px; 
+            padding-right: 50px; /* Khabron ke ek chakkar ke baad ka fasla */
+        }
+
+        /* Separator / Khabron ke darmiyan ka nishan */
+        .separator {
+            margin: 0 40px;
+            color: #ffcc00;
+            font-size: 16px;
+        }
+        
+        .ticker-white .separator {
+            color: #d30000;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* LIVE CLOCK / Samay no dabbo */
+        .clock-container {
+            background: linear-gradient(to bottom, #0044cc, #001f80); /* Blue color */
+            color: white;
+            padding: 0;
+            width: 120px; /* Width 160px se kam kar ke 120px kar di hai */
+            flex-shrink: 0;
+            height: 100%; /* Pure height mein aayega taaki niche line na dikhe */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 900;
+            font-size: 12px; /* 25px height ke liye text adjust kiya */
+            z-index: 10;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.3);
+            letter-spacing: 1px;
+            font-family: 'Arial Black', sans-serif;
+            white-space: nowrap;
+            text-align: center;
+            overflow: hidden; /* Swipe effect ke liye zaroori */
+        }
+
+        #live-clock-text {
+            display: inline-block;
+        }
+
+        /* Swipe Animations for Clock */
+        .swipe-out {
+            animation: swipeOutLeft 0.3s ease-in forwards;
+        }
+
+        .swipe-in {
+            animation: swipeInRight 0.3s ease-out forwards;
+        }
+
+        @keyframes swipeOutLeft {
+            0% { transform: translateX(0); opacity: 1; }
+            100% { transform: translateX(-150%); opacity: 0; }
+        }
+
+        @keyframes swipeInRight {
+            0% { transform: translateX(150%); opacity: 0; }
+            100% { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Keyframes for sliding text / CSS Animations */
+        @keyframes scroll-continuous {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); } /* Exact half shift se seamless loop banega */
+        }
+
+        /* Mobile responsiveness / Mobile ke liye adjustments */
+        @media (max-width: 768px) {
+            .ticker-container { width: 100%; left: 0; bottom: 0; border-radius: 0; }
+            .text-urdu { font-size: 22px; } /* Mobile par bhi font thora bara kiya */
+            .text-english { font-size: 16px; }
+            .white-title { display: none; }
+            .ticker-text-span { font-size: 12px; }
+            .clock-container { font-size: 10px; width: 90px; } 
+            .ticker-red { height: 55px; } /* Mobile par red patti ki height bhi bari ki */
+            .ticker-bottom-row { height: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Piche chalne wala dummy video/screen -->
+    <div class="tv-screen">
+        [ Sorasori Somprochar / Khoborer Channel ]
+    </div>
+
+    <!-- Ticker Section Start -->
+    <div class="ticker-container">
+        
+        <!-- Upar Wali Laal Patti (Urdu Zoom Animation + Luxury Effect) -->
+        <div class="ticker-red">
+            <div class="luxury-shine"></div>
+            <div class="ticker-scroll-wrapper">
+                <div class="ticker-text text-english" id="red-ticker-text" dir="ltr">
+                    KHOBOR LOAD HOCCHE... DOYA KORE OPEKKHA KORUN...
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Row (White Patti + Blue Clock) -->
+        <div class="ticker-bottom-row">
+            <!-- Neeche Wali Safed Patti (English RSS) -->
+            <div class="ticker-white">
+                <div class="ticker-scroll-wrapper">
+                    <div class="ticker-continuous-track">
+                        <!-- Seamless loop ke liye do identical spans rakhe gaye hain -->
+                        <span class="ticker-text-span" id="english-ticker-text-1">
+                            Khobor load hocche... <span class="separator">|</span> Doya kore opekkha korun...
+                        </span>
+                        <span class="ticker-text-span" id="english-ticker-text-2">
+                            Khobor load hocche... <span class="separator">|</span> Doya kore opekkha korun...
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Smart Clock (Waqt -> Din -> Tareekh -> Islamic Date) -->
+            <div class="clock-container" id="live-clock">
+                <span id="live-clock-text">00:00:00</span>
+            </div>
+        </div>
+
+    </div>
+    <!-- Ticker Section End -->
+
+    <!-- JavaScript Clock ko chalane ke liye -->
+    <script>
+        let clockMode = 0; // 0: Time, 1: Day, 2: Date, 3: Islamic Date
+        let secondsCounter = 0;
+        const clockTextEl = document.getElementById('live-clock-text');
+
+        function getDisplayString(mode, now) {
+            if (mode === 0) {
+                // WAQT (TIME)
+                let hours = now.getHours();
+                let minutes = now.getMinutes();
+                let seconds = now.getSeconds();
+                let ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12;
+                hours = hours ? hours : 12; 
+                minutes = minutes < 10 ? '0' + minutes : minutes;
+                seconds = seconds < 10 ? '0' + seconds : seconds;
+                return hours + ':' + minutes + ':' + seconds + ' ' + ampm;
+            } else if (mode === 1) {
+                // DAY (English)
+                const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+                return days[now.getDay()];
+            } else if (mode === 2) {
+                // DATE (English)
+                const day = now.getDate();
+                const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+                const month = months[now.getMonth()];
+                const year = now.getFullYear();
+                return day + ' ' + month + ' ' + year;
+            } else if (mode === 3) {
+                // ISLAMIC DATE (Hijri) - Only Numbers
+                try {
+                    const options = { day: 'numeric', month: 'numeric', year: 'numeric' };
+                    // 'en' locale fallback for readable text, 'islamic' calendar
+                    return new Intl.DateTimeFormat('en-u-ca-islamic', options).format(now);
+                } catch(e) {
+                    return "Islamic Date";
+                }
+            }
+        }
+
+        function updateSmartClock() {
+            secondsCounter++;
+            const now = new Date();
+            
+            // Har 5 second baad display badlein (Time -> Day -> Date -> Islamic Date)
+            if (secondsCounter > 5) {
+                clockMode = (clockMode + 1) % 4; // 4 modes now
+                secondsCounter = 0;
+                
+                // Fast left swipe out animation lagayein
+                clockTextEl.classList.remove('swipe-in');
+                clockTextEl.classList.add('swipe-out');
+                
+                // 300ms baad text change karein aur swipe in karein
+                setTimeout(() => {
+                    clockTextEl.textContent = getDisplayString(clockMode, new Date());
+                    clockTextEl.classList.remove('swipe-out');
+                    clockTextEl.classList.add('swipe-in');
+                }, 300);
+            } else {
+                // Agar swipe animation nahi chal rahi, toh normal time update karein
+                if(!clockTextEl.classList.contains('swipe-out')) {
+                     clockTextEl.textContent = getDisplayString(clockMode, now);
+                }
+            }
+        }
+
+        // Har 1 second (1000 milliseconds) ke baad function chalayein
+        setInterval(updateSmartClock, 1000);
+        // Start for the first time
+        clockTextEl.textContent = getDisplayString(clockMode, new Date());
+
+        // --- RSS Feeds and Red Ticker Zoom Animation Logic ---
+        let allNews = [
+            { title: "KHOBOR LOAD HOCCHE... DOYA KORE OPEKKHA KORUN...", lang: "en" }
+        ];
+        let currentNewsIndex = 0;
+        const redTickerText = document.getElementById('red-ticker-text');
+
+        // Fetch Both RSS Feeds
+        const urduRss = "https://www.24urdu.com/rss/world";
+        const engRss = "http://rss.cnn.com/rss/edition.rss";
+
+        function fetchNewsFeeds() {
+            Promise.all([
+                fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(urduRss)}`).then(res => res.json()),
+                fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(engRss)}`).then(res => res.json())
+            ])
+            .then(([urduData, engData]) => {
+                // Process Urdu News (Sirf Top Red Ticker ke liye)
+                if (urduData.status === 'ok' && urduData.items.length > 0) {
+                    allNews = urduData.items.map(item => ({ title: item.title, lang: 'ur' }));
+                    // currentNewsIndex reset nahi kar rahe taaki ongoing animation disturb na ho
+                }
+                
+                // Process English News (Sirf Bottom White Scrolling Ticker ke liye)
+                if (engData.status === 'ok' && engData.items.length > 0) {
+                    const engText = engData.items.map(item => item.title).join(' <span class="separator">|</span> ') + ' <span class="separator">|</span> ';
+                    // Dono spans mein exact same text daalna hai seamless effect ke liye
+                    document.getElementById('english-ticker-text-1').innerHTML = engText;
+                    document.getElementById('english-ticker-text-2').innerHTML = engText;
+                }
+            })
+            .catch(err => console.error("RSS Fetch Error:", err));
+        }
+
+        // Pehli dafa turant fetch karein
+        fetchNewsFeeds();
+        // Har 1 minute (60,000 milliseconds) baad feeds jaldi refresh karein
+        setInterval(fetchNewsFeeds, 60000);
+
+        function playZoomAnimation() {
+            // Purani animation ko hatana taake nai dobara start ho sake
+            redTickerText.classList.remove('zoomFast');
+            void redTickerText.offsetWidth; // CSS Reflow trigger karna
+            
+            // Get current news item
+            const currentItem = allNews[currentNewsIndex];
+            
+            // Set text content
+            redTickerText.textContent = currentItem.title;
+            
+            // Apply language-specific styles dynamically
+            if (currentItem.lang === 'ur') {
+                redTickerText.dir = 'rtl';
+                redTickerText.className = 'ticker-text text-urdu zoomFast';
+            } else {
+                redTickerText.dir = 'ltr';
+                redTickerText.className = 'ticker-text text-english zoomFast';
+            }
+            
+            // Increment index for next loop
+            currentNewsIndex = (currentNewsIndex + 1) % allNews.length;
+        }
+
+        // Pehli dafa chalana
+        playZoomAnimation();
+        // Har 5 second baad loop chalana (kyunke animation ki duration 5s hai)
+        setInterval(playZoomAnimation, 5000); 
+    </script>
+</body>
+</html>

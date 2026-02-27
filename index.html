@@ -375,73 +375,81 @@
         // Start for the first time
         clockTextEl.textContent = getDisplayString(clockMode, new Date());
 
-        // --- RSS Feeds and Red Ticker Zoom Animation Logic ---
-        let allNews = [
-            { title: "KHOBOR LOAD HOCCHE... DOYA KORE OPEKKHA KORUN...", lang: "en" }
+        // --- Aapka Diya Gaya RSS & Animation Logic ---
+        var allNews = [
+            { title: "NEWS LOADING... PLEASE WAIT...", lang: "en" }
         ];
-        let currentNewsIndex = 0;
-        const redTickerText = document.getElementById('red-ticker-text');
 
-        // Fetch Both RSS Feeds
-        const urduRss = "https://www.24urdu.com/rss/world";
-        const engRss = "http://rss.cnn.com/rss/edition.rss";
+        var currentNewsIndex = 0;
+        var redTickerText = document.getElementById('red-ticker-text');
+
+        var urduRss = "https://www.24urdu.com/rss/world";
+        var engRss = "http://rss.cnn.com/rss/edition.rss";
+
+        function fetchRSS(url, callback) {
+            var xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    callback(JSON.parse(xhr.responseText));
+                }
+            };
+            xhr.open("GET", "https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent(url), true);
+            xhr.send();
+        }
 
         function fetchNewsFeeds() {
-            Promise.all([
-                fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(urduRss)}`).then(res => res.json()),
-                fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(engRss)}`).then(res => res.json())
-            ])
-            .then(([urduData, engData]) => {
-                // Process Urdu News (Sirf Top Red Ticker ke liye)
-                if (urduData.status === 'ok' && urduData.items.length > 0) {
-                    allNews = urduData.items.map(item => ({ title: item.title, lang: 'ur' }));
-                    // currentNewsIndex reset nahi kar rahe taaki ongoing animation disturb na ho
+
+            fetchRSS(urduRss, function (urduData) {
+                if (urduData.status == "ok" && urduData.items.length > 0) {
+                    allNews = [];
+                    for (var i = 0; i < urduData.items.length; i++) {
+                        allNews.push({ title: urduData.items[i].title, lang: "ur" });
+                    }
                 }
-                
-                // Process English News (Sirf Bottom White Scrolling Ticker ke liye)
-                if (engData.status === 'ok' && engData.items.length > 0) {
-                    const engText = engData.items.map(item => item.title).join(' <span class="separator">|</span> ') + ' <span class="separator">|</span> ';
-                    // Dono spans mein exact same text daalna hai seamless effect ke liye
+            });
+
+            fetchRSS(engRss, function (engData) {
+                if (engData.status == "ok" && engData.items.length > 0) {
+
+                    var engText = "";
+                    for (var i = 0; i < engData.items.length; i++) {
+                        engText += engData.items[i].title + ' <span class="separator">|</span> ';
+                    }
+
                     document.getElementById('english-ticker-text-1').innerHTML = engText;
                     document.getElementById('english-ticker-text-2').innerHTML = engText;
                 }
-            })
-            .catch(err => console.error("RSS Fetch Error:", err));
+            });
         }
-
-        // Pehli dafa turant fetch karein
-        fetchNewsFeeds();
-        // Har 1 minute (60,000 milliseconds) baad feeds jaldi refresh karein
-        setInterval(fetchNewsFeeds, 60000);
 
         function playZoomAnimation() {
-            // Purani animation ko hatana taake nai dobara start ho sake
-            redTickerText.classList.remove('zoomFast');
-            void redTickerText.offsetWidth; // CSS Reflow trigger karna
-            
-            // Get current news item
-            const currentItem = allNews[currentNewsIndex];
-            
-            // Set text content
-            redTickerText.textContent = currentItem.title;
-            
-            // Apply language-specific styles dynamically
-            if (currentItem.lang === 'ur') {
-                redTickerText.dir = 'rtl';
-                redTickerText.className = 'ticker-text text-urdu zoomFast';
+
+            redTickerText.className = redTickerText.className.replace(" zoomFast", "");
+            void redTickerText.offsetWidth;
+
+            var currentItem = allNews[currentNewsIndex];
+
+            redTickerText.innerHTML = currentItem.title;
+
+            if (currentItem.lang == "ur") {
+                redTickerText.dir = "rtl";
+                redTickerText.className = "ticker-text text-urdu zoomFast";
             } else {
-                redTickerText.dir = 'ltr';
-                redTickerText.className = 'ticker-text text-english zoomFast';
+                redTickerText.dir = "ltr";
+                redTickerText.className = "ticker-text text-english zoomFast";
             }
-            
-            // Increment index for next loop
-            currentNewsIndex = (currentNewsIndex + 1) % allNews.length;
+
+            currentNewsIndex++;
+            if (currentNewsIndex >= allNews.length) {
+                currentNewsIndex = 0;
+            }
         }
 
-        // Pehli dafa chalana
+        fetchNewsFeeds();
+        setInterval(fetchNewsFeeds, 60000);
         playZoomAnimation();
-        // Har 5 second baad loop chalana (kyunke animation ki duration 5s hai)
-        setInterval(playZoomAnimation, 5000); 
+        setInterval(playZoomAnimation, 5000);
+
     </script>
 </body>
 </html>
